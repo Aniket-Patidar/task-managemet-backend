@@ -3,6 +3,11 @@ const { generateJWTToken } = require('../utils/authHelper');
 const User = require('../models/userModel');
 const ErrorHandler = require('../utils/ErrorHandler');
 
+exports.jwtUser = catchAsyncError(async (req, res) => {
+  const token = generateJWTToken(req.user._id);
+  res.json({ token, user: req.user });
+});
+
 exports.loginUser = catchAsyncError(async (req, res, next) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -43,7 +48,6 @@ exports.signupUser = catchAsyncError(async (req, res, next) => {
   res.status(201).json({ token, user: newUser });
 });
 
-
 exports.logoutUser = catchAsyncError(async (req, res, next) => {
   try {
     req.user = null;
@@ -55,7 +59,6 @@ exports.logoutUser = catchAsyncError(async (req, res, next) => {
 
 exports.uploadAvatar = catchAsyncError(async (req, res) => {
 });
-
 
 exports.changePassword = catchAsyncError(async (req, res, next) => {
   try {
