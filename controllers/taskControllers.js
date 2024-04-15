@@ -7,30 +7,37 @@ const mongoose = require('mongoose');
 
 exports.getAllTasks = catchAsyncError(async (req, res, next) => {
     try {
-        let { page = 1, limit = 10, search } = req.query;
-        page = parseInt(page);
-        limit = parseInt(limit);
-
+        let { page = 1, search } = req.query;
+        const limit = 2;
         const query = {};
         if (search) {
             query.title = { $regex: new RegExp(search, 'i') };
         }
 
-        const user = await User.findById(req.user.id)
-            .populate({
-                path: 'tasks',
-                match: query,
-                options: {
-                    limit: limit,
-                    skip: (page - 1) * limit,
-                }
-            });
+        const user = await User.findById(req.user.id).populate({
+            path: 'tasks',
+            match: query,
+            options: {
+                limit: limit,
+                skip: (page - 1) * limit,
+            }
+        });
 
-        res.status(200).json({ tasks: user.tasks });
+        // Total number of tasks
+        const totalCount = await Task.countDocuments(query);
+
+        res.status(200).json({
+            tasks: user.tasks,
+            totalPages: Math.ceil(totalCount / limit), // Total pages calculation
+            currentPage: page,
+            totalCount: totalCount
+        });
     } catch (error) {
         next(error);
     }
 });
+
+
 
 exports.createTask = catchAsyncError(async (req, res, next) => {
     try {
