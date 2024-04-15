@@ -3,6 +3,15 @@ const { generateJWTToken } = require('../utils/authHelper');
 const User = require('../models/userModel');
 const ErrorHandler = require('../utils/ErrorHandler');
 
+
+const cloudinary = require('cloudinary').v2;
+const path = require('path');
+cloudinary.config({
+  cloud_name: 'draw7t9sz',
+  api_key: '329576791485659',
+  api_secret: 'D3aHlPjygJhdbC6eozUCRpXD5CQ'
+});
+
 exports.jwtUser = catchAsyncError(async (req, res) => {
   const token = generateJWTToken(req.user._id);
   res.json({ token, user: req.user });
@@ -58,6 +67,42 @@ exports.logoutUser = catchAsyncError(async (req, res, next) => {
 });
 
 exports.uploadAvatar = catchAsyncError(async (req, res) => {
+  const { _id: id } = req.user;
+
+  const user = await User.findById(id).exec();
+
+  if (req.files && req.files.avatar) {
+    const file = req.files.avatar;
+    const modifiedName = `task-${Date.now()}${path.extname(file.name)}`;
+
+    if (user.avatar.fileId !== '') {
+      await cloudinary.uploader.destroy(user.avatar.fileId, (error, result) => {
+        if (error) {
+          console.error('Error deleting file from Cloudinary:', error);
+        } else {
+          console.log('File deleted successfully:', result);
+        }
+      });
+    }
+    const filepath = req.files.avatar;
+    const myavatar = await cloudinary.uploader.upload(filepath.tempFilePath, {
+      folder: "avaters",
+    });
+
+    user.avatar = {
+      fileId: myavatar.public_id,
+      url: myavatar.secure_url
+    };
+
+    await user.save();
+    return res
+      .status(200)
+      .json({ success: true, message: 'Profile Picture Updated Successfully!', user: user });
+  } else {
+    // Handle the case where req.files or req.files.resuma is undefined
+    return next(new ErrorHandler("Find No Avatar"))
+  }
+
 });
 
 exports.changePassword = catchAsyncError(async (req, res, next) => {
@@ -92,3 +137,14 @@ exports.changePassword = catchAsyncError(async (req, res, next) => {
     next(new ErrorHandler('Password change failed', 500));
   }
 })
+
+exports.profileUpdated = catchAsyncError(async (req, res, next) => {
+  const { username, email } = req.body;
+  if (!username || !email) {
+    return next(new ErrorHandler('Username, email', 400));
+  }
+  const user = await User.findByIdAndUpdate(req.user.id, req.body);
+  await user.save();
+
+  res.json({ success: true, user })
+});

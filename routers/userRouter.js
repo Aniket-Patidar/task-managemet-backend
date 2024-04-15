@@ -6,6 +6,7 @@ const taskController = require('../controllers/userControllers.js');
 router.get('/jwt', authenticateJWT, taskController.jwtUser);
 router.post('/login', taskController.loginUser);
 router.post('/signup', taskController.signupUser);
+router.post('/update-profile', authenticateJWT, taskController.uploadAvatar);
 router.get('/logout', authenticateJWT, taskController.logoutUser);
 router.post('/upload-avatar', authenticateJWT, taskController.uploadAvatar);
 router.post('/forgot-password', authenticateJWT, taskController.changePassword);

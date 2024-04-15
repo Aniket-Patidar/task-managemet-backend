@@ -22,6 +22,15 @@ const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
 
+
+const fileupload = require('express-fileupload');
+app.use(fileupload({
+    useTempFiles: true
+}));
+
+
+
+
 app.use('/task', require("./routers/taskRouter"))
 app.use('/user', require("./routers/userRouter"))
 
