@@ -11,5 +11,9 @@ router.get('/logout', authenticateJWT, taskController.logoutUser);
 router.post('/upload-avatar', authenticateJWT, taskController.uploadAvatar);
 router.post('/forgot-password', authenticateJWT, taskController.changePassword);
 
+router.post('/forgot', taskController.sendEmail);
+router.post('/reset', taskController.resetPassword);
+
+
 module.exports = router
 

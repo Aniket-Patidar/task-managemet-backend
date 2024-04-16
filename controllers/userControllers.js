@@ -1,8 +1,9 @@
 const catchAsyncError = require('../utils/catchAsyncError');
 const { generateJWTToken } = require('../utils/authHelper');
 const User = require('../models/userModel');
-const ErrorHandler = require('../utils/ErrorHandler');
+const nodemailer = require('nodemailer');
 
+const ErrorHandler = require('../utils/ErrorHandler');
 
 const cloudinary = require('cloudinary').v2;
 const path = require('path');
@@ -148,3 +149,53 @@ exports.profileUpdated = catchAsyncError(async (req, res, next) => {
 
   res.json({ success: true, user })
 });
+
+
+
+exports.sendEmail = catchAsyncError(async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOne({email});
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+    
+  }
+  const token = user._id;
+
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: 'aniketpatidar76@gmail.com',
+      pass: 'rcop neut nebb mbjv'
+    }
+  });
+
+  const mailOptions = {
+    from: 'your_email@gmail.com',
+    to: email,
+    subject: 'Reset Password',
+    html: `<p>You requested to reset your password. Click <a href="http://localhost:3000/ChangePassword?id=${token}">here</a> to reset your password.</p>`
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).json({ message: 'Error sending email' });
+    }
+    console.log('Email sent: ' + info.response);
+    return res.status(200).json({ message: 'Email sent successfully' });
+  });
+})
+
+
+exports.resetPassword = catchAsyncError(async (req, res) => {
+  const { id, newPassword } = req.body;
+  const user = await User.findById(id);
+  user.password = newPassword;
+  await user.save();
+  return res.status(200).json({ message: 'Password changed successfully', user });
+})
+
+
+
+
+
